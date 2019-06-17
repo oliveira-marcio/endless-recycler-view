@@ -13,9 +13,17 @@ abstract class EndlessScrollListener(
     private var loading = true
     private val startingPageIndex = 0
 
-    override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
-        var lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+        val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
         val totalItemCount = layoutManager.itemCount
+
+        if (totalItemCount < previousTotalItemCount) {
+            currentPage = startingPageIndex
+            previousTotalItemCount = totalItemCount
+            if (totalItemCount == 0) {
+                loading = true
+            }
+        }
 
         if (loading && (totalItemCount > previousTotalItemCount)) {
             loading = false
@@ -23,9 +31,9 @@ abstract class EndlessScrollListener(
         }
 
         if (!loading && (lastVisibleItemPosition + visibleThreshold) > totalItemCount) {
-            currentPage++;
-            onLoadMore(currentPage, totalItemCount, view)
-            loading = true;
+            currentPage++
+            onLoadMore(currentPage, totalItemCount, recyclerView)
+            loading = true
         }
     }
 
@@ -35,5 +43,5 @@ abstract class EndlessScrollListener(
         loading = true
     }
 
-    abstract fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView)
+    abstract fun onLoadMore(page: Int, totalItemsCount: Int, recyclerView: RecyclerView)
 }
