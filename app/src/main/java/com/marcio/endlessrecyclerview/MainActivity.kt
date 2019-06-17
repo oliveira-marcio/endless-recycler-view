@@ -17,28 +17,54 @@ class MainActivity : AppCompatActivity() {
     private var adapter: CustomAdapter? = null
     private var listener: EndlessScrollListener? = null
 
+    private var currentDbPage = 0
+
+    companion object {
+        const val STATE_DB_PAGE = "dbPage"
+        const val STATE_DB_ITEMS = "dbItems"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         initFakeDB()
-        loadMoreData()
+
+        val layoutManager = LinearLayoutManager(this)
+
+        listener = object : EndlessScrollListener(layoutManager) {
+            override fun onLoadMore(page: Int, totalItemsCount: Int, recyclerView: RecyclerView) {
+                currentDbPage = page
+                loadMoreData(page)
+            }
+        }
+
+        if (savedInstanceState != null) {
+            with(savedInstanceState) {
+                items.addAll(getStringArrayList(STATE_DB_ITEMS)!!.toMutableList())
+                currentDbPage = getInt(STATE_DB_PAGE, 0)
+                (listener as EndlessScrollListener).restoreState(currentDbPage)
+            }
+        } else {
+            loadMoreData()
+        }
 
         adapter = CustomAdapter(items)
 
         recyclerView = findViewById(R.id.recyclerView)
-        val layoutManager = LinearLayoutManager(this)
-
-        listener = object : EndlessScrollListener(layoutManager) {
-            override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView) {
-                loadMoreData(page)
-            }
-        }
 
         recyclerView!!.layoutManager = layoutManager
         recyclerView!!.setHasFixedSize(true)
         recyclerView!!.adapter = adapter
         recyclerView!!.addOnScrollListener(listener as EndlessScrollListener)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.run {
+            putStringArrayList(STATE_DB_ITEMS, items as ArrayList<String>)
+            putInt(STATE_DB_PAGE, currentDbPage)
+        }
+        super.onSaveInstanceState(outState)
     }
 
     private fun loadMoreData(page: Int = 0) {
