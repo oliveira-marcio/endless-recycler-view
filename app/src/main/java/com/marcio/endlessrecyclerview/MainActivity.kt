@@ -10,6 +10,7 @@ class MainActivity : AppCompatActivity() {
 
     private val logTag = MainActivity::class.simpleName
 
+    private val db = mutableListOf<String>()
     private val items = mutableListOf<String>()
 
     private var recyclerView: RecyclerView? = null
@@ -20,7 +21,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        initFakeDB()
+        loadMoreData()
+
         adapter = CustomAdapter(items)
+
         recyclerView = findViewById(R.id.recyclerView)
         val layoutManager = LinearLayoutManager(this)
 
@@ -34,23 +39,39 @@ class MainActivity : AppCompatActivity() {
         recyclerView!!.setHasFixedSize(true)
         recyclerView!!.adapter = adapter
         recyclerView!!.addOnScrollListener(listener as EndlessScrollListener)
-
-        loadMoreData()
     }
 
     private fun loadMoreData(page: Int = 0) {
-        val size = 30
-        val newItems = generateData(page, size)
-        items.addAll(newItems)
-        recyclerView!!.post { adapter!!.notifyItemRangeInserted(adapter!!.itemCount - 1, size) }
-        Log.v(logTag, "Loading more ${newItems.size}. Total: ${items.size}")
+        val limit = 20
+        val offset = page * limit
+
+        val moreItems = loadFromFakeDB(offset, limit)
+
+        if (moreItems.isNotEmpty()) {
+            items.addAll(moreItems)
+            Log.v(logTag, "Loading more ${moreItems.size}. Total: ${items.size}")
+            if (offset > 0) {
+                recyclerView!!.post { adapter!!.notifyItemRangeInserted(offset, moreItems.size) }
+            }
+        }
     }
 
-    private fun generateData(page: Int = 0, size: Int = 20): List<String> {
-        val items = mutableListOf<String>()
-        for (i in 1..size) {
-            items.add("Data ${(page * size) + i}")
+    private fun initFakeDB() {
+        for (i in 1..1000) {
+            db.add("Data $i")
         }
-        return items
+    }
+
+    private fun loadFromFakeDB(offset: Int, limit: Int): List<String> {
+        val pagedItems = mutableListOf<String>()
+
+        if (offset < db.size) {
+            val nextOffset = offset + limit
+            for (i in offset until if (nextOffset < db.size) nextOffset else db.size) {
+                pagedItems.add(db[i])
+            }
+        }
+
+        return pagedItems
     }
 }
