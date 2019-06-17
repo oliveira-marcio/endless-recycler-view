@@ -37,6 +37,12 @@ abstract class EndlessScrollListener(
         }
     }
 
+    fun restoreState(savedPage: Int) {
+        currentPage = savedPage
+        previousTotalItemCount = savedPage
+        loading = true
+    }
+
     fun resetState() {
         currentPage = startingPageIndex
         previousTotalItemCount = 0
